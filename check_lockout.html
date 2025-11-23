@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>Check Lockout</title></head>
+<body>
+<h2>Status Lockout:</h2>
+<pre id="result"></pre>
+<button onclick="clearLockout()">Clear Lockout</button>
+<script>
+const lockout = localStorage.getItem('__hc_auth_lockout');
+const attempts = localStorage.getItem('__hc_auth_attempts');
+
+let msg = '';
+if (lockout) {
+    const time = new Date(parseInt(lockout));
+    msg += '🔒 AKUN TERKUNCI sampai: ' + time.toLocaleString() + '\n';
+    msg += 'Percobaan gagal: ' + (attempts || '0') + '\n';
+} else {
+    msg += '✅ Akun TIDAK terkunci\n';
+    msg += 'Percobaan gagal: ' + (attempts || '0') + '\n';
+}
+document.getElementById('result').textContent = msg;
+
+function clearLockout() {
+    localStorage.removeItem('__hc_auth_lockout');
+    localStorage.removeItem('__hc_auth_attempts');
+    alert('✅ Lockout berhasil dihapus!');
+    location.reload();
+}
+</script>
+</body>
+</html>
