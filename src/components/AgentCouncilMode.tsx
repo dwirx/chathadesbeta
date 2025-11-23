@@ -441,33 +441,33 @@ export const AgentCouncilMode = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-7xl max-h-[95vh] p-0 gap-0">
-                <DialogHeader className="border-b bg-card p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                            <div className="p-1.5 sm:p-2 bg-primary/10 border border-primary/20 rounded-lg flex-shrink-0">
-                                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+            <DialogContent className="max-w-full sm:max-w-[90vw] lg:max-w-7xl h-[100dvh] sm:h-auto sm:max-h-[95vh] p-0 gap-0 sm:rounded-lg rounded-none flex flex-col [&>button]:hidden">
+                <DialogHeader className="border-b bg-gradient-to-b from-card to-background p-2.5 sm:p-4 space-y-2 flex-shrink-0">
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+                            <div className="p-1 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 rounded-lg flex-shrink-0 shadow-sm">
+                                <Users className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-primary" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <DialogTitle className="text-base sm:text-xl">
-                                    Agent Council Mode
+                                <DialogTitle className="text-sm sm:text-xl font-bold truncate">
+                                    Agent Council
                                 </DialogTitle>
-                                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                                <p className="text-[9px] sm:text-xs text-muted-foreground truncate">
                                     {currentSession
                                         ? currentSession.title
                                         : "New Session"}{" "}
-                                    • {councilMembers.length} Members
+                                    • {councilMembers.length}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex gap-1.5 flex-shrink-0">
+                        <div className="flex gap-0.5 sm:gap-1 flex-shrink-0 items-center">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={handleNewSession}
-                                className="h-8 px-2"
+                                className="h-7 sm:h-8 w-7 sm:w-auto px-1.5 sm:px-2"
                             >
-                                <Sparkles className="w-3.5 h-3.5 sm:mr-1.5" />
+                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 sm:mr-1.5" />
                                 <span className="hidden sm:inline text-xs">
                                     New
                                 </span>
@@ -476,9 +476,9 @@ export const AgentCouncilMode = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowSessions(!showSessions)}
-                                className="h-8 px-2"
+                                className="h-7 sm:h-8 w-7 sm:w-auto px-1.5 sm:px-2"
                             >
-                                <History className="w-3.5 h-3.5 sm:mr-1.5" />
+                                <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 sm:mr-1.5" />
                                 <span className="hidden sm:inline text-xs">
                                     {sessions.length}
                                 </span>
@@ -487,13 +487,21 @@ export const AgentCouncilMode = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowConfig(!showConfig)}
-                                className="h-8 px-2"
+                                className="h-7 sm:h-8 w-7 sm:w-auto px-1.5 sm:px-2"
                             >
                                 {showConfig ? (
-                                    <ChevronUp className="w-3.5 h-3.5" />
+                                    <ChevronUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 ) : (
-                                    <Settings className="w-3.5 h-3.5" />
+                                    <Settings className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 )}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onClose}
+                                className="h-7 sm:h-8 w-7 sm:w-8 p-0 ml-1 sm:ml-2 hover:bg-destructive/10"
+                            >
+                                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                         </div>
                     </div>
@@ -665,41 +673,50 @@ export const AgentCouncilMode = ({
                     </Collapsible>
                 </DialogHeader>
 
-                <div className="flex h-[calc(95vh-200px)] sm:h-[calc(95vh-180px)] relative">
+                <div className="flex flex-1 relative overflow-hidden min-h-0">
+                    {/* Backdrop for mobile */}
+                    {showSessions && (
+                        <div
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 sm:hidden"
+                            onClick={() => setShowSessions(false)}
+                        />
+                    )}
+
                     {/* Sessions Sidebar */}
                     {showSessions && (
-                        <div className="absolute sm:relative z-10 w-full sm:w-64 h-full border-r bg-background sm:bg-muted/30 flex flex-col shadow-lg sm:shadow-none">
-                            <div className="p-3 border-b bg-card sm:bg-transparent">
+                        <div className="absolute sm:relative z-20 w-[80vw] sm:w-64 h-full border-r bg-background sm:bg-muted/30 flex flex-col shadow-2xl sm:shadow-none animate-in slide-in-from-left duration-200">
+                            <div className="p-2.5 sm:p-3 border-b bg-gradient-to-r from-card to-muted/50 sm:bg-transparent">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="font-semibold text-sm">
-                                        Sessions History
+                                    <h3 className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                                        <History className="w-3.5 h-3.5" />
+                                        History
                                     </h3>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setShowSessions(false)}
-                                        className="h-6 w-6 p-0"
+                                        className="h-6 w-6 p-0 hover:bg-destructive/10"
                                     >
-                                        <X className="w-3.5 h-3.5" />
+                                        <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </Button>
                                 </div>
                             </div>
                             <ScrollArea className="flex-1">
-                                <div className="p-2 space-y-1">
+                                <div className="p-1.5 sm:p-2 space-y-1">
                                     {sessions.length === 0 ? (
-                                        <div className="text-center text-xs text-muted-foreground p-4">
-                                            No sessions yet
+                                        <div className="text-center text-[10px] sm:text-xs text-muted-foreground p-3 sm:p-4">
+                                            No sessions
                                         </div>
                                     ) : (
                                         sessions.map((session) => (
                                             <div
                                                 key={session.id}
                                                 className={cn(
-                                                    "group relative p-2 rounded-lg cursor-pointer transition-colors",
-                                                    "hover:bg-accent",
+                                                    "group relative p-2 rounded-lg cursor-pointer transition-all",
+                                                    "hover:bg-accent active:scale-95",
                                                     currentSessionId ===
                                                         session.id &&
-                                                        "bg-primary/10 border border-primary/20",
+                                                        "bg-primary/10 border border-primary/20 shadow-sm",
                                                 )}
                                                 onClick={() =>
                                                     handleSelectSession(
@@ -707,16 +724,18 @@ export const AgentCouncilMode = ({
                                                     )
                                                 }
                                             >
-                                                <div className="flex items-start gap-2">
-                                                    <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                                                <div className="flex items-start gap-1.5 sm:gap-2">
+                                                    <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-medium truncate">
+                                                        <p className="text-[10px] sm:text-xs font-medium truncate leading-tight">
                                                             {session.title}
                                                         </p>
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            {session.turns.length}{" "}
-                                                            turns •{" "}
-                                                            {session.updatedAt.toLocaleDateString()}
+                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
+                                                            {session.turns.length} •{" "}
+                                                            {new Date(session.updatedAt).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric'
+                                                            })}
                                                         </p>
                                                     </div>
                                                     <Button
@@ -728,9 +747,9 @@ export const AgentCouncilMode = ({
                                                                 session.id,
                                                             );
                                                         }}
-                                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                                                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 opacity-50 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
-                                                        <Trash2 className="w-3 h-3 text-destructive" />
+                                                        <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-destructive" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -742,60 +761,72 @@ export const AgentCouncilMode = ({
                     )}
 
                     {/* Main Content */}
-                    <ScrollArea
-                        className="flex-1 px-3 sm:px-6"
-                        ref={scrollAreaRef}
-                    >
-                        <div className="py-4 sm:py-6 space-y-4 sm:space-y-6">
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <ScrollArea
+                            className="flex-1 px-2 sm:px-6"
+                            ref={scrollAreaRef}
+                        >
+                            <div className="py-3 sm:py-6 space-y-3 sm:space-y-6 pb-20 sm:pb-6">
                             {/* Welcome */}
                             {!currentSession &&
                                 !isLoading &&
                                 sessions.length === 0 && (
-                                    <Card className="border-primary/20">
-                                        <CardHeader className="pb-3">
-                                            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                                                <Users className="w-4 h-4 text-primary" />
-                                                Welcome to Agent Council Mode
+                                    <Card className="border-primary/20 shadow-lg">
+                                        <CardHeader className="pb-2 sm:pb-3 pt-3 sm:pt-4 bg-gradient-to-br from-primary/5 to-transparent">
+                                            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold">
+                                                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                                                    <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                                                </div>
+                                                <span className="hidden sm:inline">
+                                                    Welcome to Agent Council
+                                                </span>
+                                                <span className="inline sm:hidden">
+                                                    Agent Council
+                                                </span>
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            <p className="text-xs sm:text-sm text-muted-foreground">
-                                                A collaborative AI system where
-                                                multiple models work together in 3
-                                                stages:
+                                        <CardContent className="space-y-2 sm:space-y-3">
+                                            <p className="text-[10px] sm:text-sm text-muted-foreground">
+                                                Collaborative AI with 3-stage process
                                             </p>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border">
-                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+                                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                                <div className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2.5 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 shadow-sm">
+                                                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] sm:text-xs font-bold shadow-sm">
                                                         1
                                                     </div>
-                                                    <span className="text-xs">
-                                                        {councilMembers.length}{" "}
-                                                        models respond
+                                                    <span className="text-[9px] sm:text-xs text-center font-medium">
+                                                        <span className="hidden sm:inline">
+                                                            {councilMembers.length} Models
+                                                        </span>
+                                                        <span className="inline sm:hidden">
+                                                            {councilMembers.length}M
+                                                        </span>
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border">
-                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+                                                <div className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2.5 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 shadow-sm">
+                                                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400 text-[10px] sm:text-xs font-bold shadow-sm">
                                                         2
                                                     </div>
-                                                    <span className="text-xs">
-                                                        Peer ranking
+                                                    <span className="text-[9px] sm:text-xs text-center font-medium">
+                                                        <span className="hidden sm:inline">Rank</span>
+                                                        <span className="inline sm:hidden">Rank</span>
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border">
-                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+                                                <div className="flex flex-col items-center gap-1.5 p-1.5 sm:p-2.5 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/20 shadow-sm">
+                                                    <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 text-[10px] sm:text-xs font-bold shadow-sm">
                                                         3
                                                     </div>
-                                                    <span className="text-xs">
-                                                        Chairman synthesis
+                                                    <span className="text-[9px] sm:text-xs text-center font-medium">
+                                                        <span className="hidden sm:inline">Synth</span>
+                                                        <span className="inline sm:hidden">Synth</span>
                                                     </span>
                                                 </div>
                                             </div>
                                             {!councilAvailable && (
-                                                <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-lg">
-                                                    <p className="text-xs text-destructive font-medium">
-                                                        ⚠️ Configure API keys
-                                                        first
+                                                <div className="p-2 sm:p-2.5 bg-destructive/10 border border-destructive/20 rounded-lg animate-pulse">
+                                                    <p className="text-[10px] sm:text-xs text-destructive font-medium flex items-center gap-1.5">
+                                                        <span className="text-sm">⚠️</span>
+                                                        Configure API keys first
                                                     </p>
                                                 </div>
                                             )}
@@ -805,18 +836,20 @@ export const AgentCouncilMode = ({
 
                             {/* Loading */}
                             {isLoading && (
-                                <Card className="border-primary/50">
-                                    <CardContent className="pt-4 pb-4">
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                                <span className="text-xs sm:text-sm font-medium">
+                                <Card className="border-primary/50 shadow-lg bg-gradient-to-br from-primary/5 to-transparent">
+                                    <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
+                                        <div className="space-y-2 sm:space-y-3">
+                                            <div className="flex items-center gap-2 sm:gap-3">
+                                                <div className="p-1.5 bg-primary/10 rounded-full">
+                                                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-primary" />
+                                                </div>
+                                                <span className="text-[10px] sm:text-sm font-semibold">
                                                     {getStageLabel()}
                                                 </span>
                                             </div>
                                             <Progress
                                                 value={getStageProgress()}
-                                                className="h-1.5"
+                                                className="h-1.5 sm:h-2"
                                             />
                                             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                                                 <span>Stage {currentStage === "stage1" ? "1" : currentStage === "stage2" ? "2" : "3"} of 3</span>
@@ -835,46 +868,57 @@ export const AgentCouncilMode = ({
                                             {turnIndex > 0 && <Separator className="my-6 sm:my-8" />}
                                             
                                             {/* Turn Header */}
-                                            <div className="flex items-center gap-2 sm:gap-3">
-                                                <Badge variant="outline" className="text-xs font-medium">
+                                            <div className="flex items-center gap-1.5 sm:gap-3">
+                                                <Badge variant="outline" className="text-[10px] sm:text-xs font-medium px-1.5 sm:px-2">
                                                     Turn {turnIndex + 1}
                                                 </Badge>
-                                                <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                                    {turn.timestamp.toLocaleString()}
+                                                <span className="text-[9px] sm:text-xs text-muted-foreground">
+                                                    {new Date(turn.timestamp).toLocaleString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
                                                 </span>
                                             </div>
 
                                             {/* Question */}
-                                            <Card className="bg-muted/30 border-muted shadow-sm">
-                                                <CardHeader className="pb-2 sm:pb-3">
-                                                    <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
-                                                        <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                            <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-muted shadow-sm">
+                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                    <CardTitle className="text-[10px] sm:text-sm font-bold flex items-center gap-1.5">
+                                                        <div className="p-1 bg-primary/10 rounded">
+                                                            <MessageSquare className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                                                        </div>
                                                         Question
                                                     </CardTitle>
                                                 </CardHeader>
-                                                <CardContent>
-                                                    <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
+                                                <CardContent className="pt-0">
+                                                    <p className="text-[11px] sm:text-sm text-foreground leading-relaxed">
                                                         {turn.query}
                                                     </p>
                                                 </CardContent>
                                             </Card>
 
                                             {/* Final Answer */}
-                                            <Card className="bg-primary/5 border-primary/20 shadow-md">
-                                                <CardHeader className="pb-2 sm:pb-3">
-                                                    <CardTitle className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
-                                                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                                                        Final Answer
+                                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 shadow-lg ring-1 ring-primary/10">
+                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-bold">
+                                                        <div className="p-1.5 bg-primary/20 rounded-lg shadow-sm">
+                                                            <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                                                        </div>
+                                                        <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                                                            Final Answer
+                                                        </span>
                                                     </CardTitle>
-                                                    <CardDescription className="text-[10px] sm:text-xs">
-                                                        Synthesized by{" "}
-                                                        <span className="font-medium text-foreground/80">
+                                                    <CardDescription className="text-[9px] sm:text-xs flex items-center gap-1">
+                                                        <span className="opacity-70">by</span>
+                                                        <span className="font-semibold text-foreground/90">
                                                             {turn.stage3_result.chairman}
                                                         </span>
                                                     </CardDescription>
                                                 </CardHeader>
-                                                <CardContent>
-                                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                <CardContent className="pt-0">
+                                                    <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
                                                         <MarkdownRenderer
                                                             content={
                                                                 turn.stage3_result
@@ -891,46 +935,46 @@ export const AgentCouncilMode = ({
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        className="w-full text-xs sm:text-sm"
+                                                        className="w-full text-[10px] sm:text-sm h-8 sm:h-9"
                                                     >
-                                                        <BarChart3 className="w-3.5 h-3.5 mr-2" />
+                                                        <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5 sm:mr-2" />
                                                         <span className="hidden sm:inline">
-                                                            View Details (Rankings, Stage 1, Stage 2)
+                                                            View Details (Rankings, Stages)
                                                         </span>
                                                         <span className="inline sm:hidden">
-                                                            View Details
+                                                            Details
                                                         </span>
-                                                        <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                                                        <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-auto" />
                                                     </Button>
                                                 </CollapsibleTrigger>
-                                                <CollapsibleContent className="mt-3 sm:mt-4">
+                                                <CollapsibleContent className="mt-2 sm:mt-4">
                                                     <Tabs defaultValue="rankings" className="w-full">
-                                                        <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+                                                        <TabsList className="grid w-full grid-cols-3 h-auto p-0.5 sm:p-1">
                                                             <TabsTrigger
                                                                 value="rankings"
-                                                                className="text-[10px] sm:text-xs data-[state=active]:bg-primary/10 py-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
                                                             >
-                                                                <BarChart3 className="w-3 h-3 sm:mr-1.5" />
-                                                                <span className="hidden sm:inline">
-                                                                    Rankings
+                                                                <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
+                                                                <span className="hidden sm:inline ml-1">
+                                                                    Rank
                                                                 </span>
                                                             </TabsTrigger>
                                                             <TabsTrigger
                                                                 value="stage1"
-                                                                className="text-[10px] sm:text-xs data-[state=active]:bg-primary/10 py-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
                                                             >
-                                                                <Users className="w-3 h-3 sm:mr-1.5" />
-                                                                <span className="hidden sm:inline">
-                                                                    Stage 1
+                                                                <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
+                                                                <span className="hidden sm:inline ml-1">
+                                                                    S1
                                                                 </span>
                                                             </TabsTrigger>
                                                             <TabsTrigger
                                                                 value="stage2"
-                                                                className="text-[10px] sm:text-xs data-[state=active]:bg-primary/10 py-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
                                                             >
-                                                                <Award className="w-3 h-3 sm:mr-1.5" />
-                                                                <span className="hidden sm:inline">
-                                                                    Stage 2
+                                                                <Award className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
+                                                                <span className="hidden sm:inline ml-1">
+                                                                    S2
                                                                 </span>
                                                             </TabsTrigger>
                                                         </TabsList>
@@ -941,11 +985,10 @@ export const AgentCouncilMode = ({
                                                                 <CardHeader className="pb-3 sm:pb-4">
                                                                     <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
                                                                         <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                                                                        Aggregate Rankings
+                                                                        Rankings
                                                                     </CardTitle>
-                                                                    <CardDescription className="text-[10px] sm:text-xs">
-                                                                        Average ranking from peer
-                                                                        reviews
+                                                                    <CardDescription className="text-[9px] sm:text-xs">
+                                                                        Peer-reviewed performance
                                                                     </CardDescription>
                                                                 </CardHeader>
                                                                 <CardContent>
@@ -954,44 +997,63 @@ export const AgentCouncilMode = ({
                                                             (
                                                                 ranking,
                                                                 index,
-                                                            ) => (
-                                                                <div
-                                                                    key={
-                                                                        ranking.member
-                                                                    }
-                                                                    className={cn(
-                                                                        "p-2.5 rounded-lg border transition-all",
-                                                                        index ===
-                                                                            0 &&
-                                                                            "bg-yellow-500/10 border-yellow-500/30",
-                                                                        index ===
-                                                                            1 &&
-                                                                            "bg-muted/50 border-muted",
-                                                                        index ===
-                                                                            2 &&
-                                                                            "bg-orange-500/10 border-orange-500/30",
-                                                                        index >
-                                                                            2 &&
-                                                                            "bg-muted/30 border-muted/50",
-                                                                    )}
-                                                                >
-                                                                    <div className="flex items-center justify-between gap-3">
-                                                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                                            ) => {
+                                                                const maxRank = Math.max(
+                                                                    ...turn.metadata.aggregate_rankings.map(
+                                                                        (r) =>
+                                                                            parseFloat(
+                                                                                r.average_rank,
+                                                                            ),
+                                                                    ),
+                                                                );
+                                                                const currentRank =
+                                                                    parseFloat(
+                                                                        ranking.average_rank,
+                                                                    );
+                                                                const progressPercent =
+                                                                    maxRank > 0
+                                                                        ? ((maxRank -
+                                                                              currentRank) /
+                                                                              maxRank) *
+                                                                          100
+                                                                        : 0;
+                                                                return (
+                                                                    <div
+                                                                        key={
+                                                                            ranking.member
+                                                                        }
+                                                                        className={cn(
+                                                                            "p-2 sm:p-2.5 rounded-lg border transition-all hover:shadow-md",
+                                                                            index ===
+                                                                                0 &&
+                                                                                "bg-gradient-to-r from-yellow-500/10 to-transparent border-yellow-500/30 shadow-sm",
+                                                                            index ===
+                                                                                1 &&
+                                                                                "bg-gradient-to-r from-slate-500/10 to-transparent border-slate-400/30",
+                                                                            index ===
+                                                                                2 &&
+                                                                                "bg-gradient-to-r from-orange-500/10 to-transparent border-orange-500/30",
+                                                                            index >
+                                                                                2 &&
+                                                                                "bg-muted/30 border-muted/50",
+                                                                        )}
+                                                                    >
+                                                                        <div className="flex items-start gap-2 sm:gap-3">
                                                                             <div
                                                                                 className={cn(
-                                                                                    "text-base sm:text-lg flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full",
+                                                                                    "text-base sm:text-xl flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full font-bold shadow-sm",
                                                                                     index ===
                                                                                         0 &&
-                                                                                        "bg-yellow-500/20",
+                                                                                        "bg-yellow-500/30 text-yellow-700 dark:text-yellow-300",
                                                                                     index ===
                                                                                         1 &&
-                                                                                        "bg-muted",
+                                                                                        "bg-slate-400/30 text-slate-700 dark:text-slate-300",
                                                                                     index ===
                                                                                         2 &&
-                                                                                        "bg-orange-500/20",
+                                                                                        "bg-orange-500/30 text-orange-700 dark:text-orange-300",
                                                                                     index >
                                                                                         2 &&
-                                                                                        "bg-muted/50 text-[10px] sm:text-xs font-semibold",
+                                                                                        "bg-muted text-muted-foreground text-xs sm:text-sm",
                                                                                 )}
                                                                             >
                                                                                 {index ===
@@ -1006,34 +1068,60 @@ export const AgentCouncilMode = ({
                                                                                         : index +
                                                                                           1}
                                                                             </div>
-                                                                            <div className="min-w-0 flex-1">
-                                                                                <div className="font-semibold text-xs sm:text-sm truncate">
-                                                                                    {
-                                                                                        ranking.member
-                                                                                    }
+                                                                            <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
+                                                                                <div className="flex items-baseline justify-between gap-2">
+                                                                                    <div className="font-bold text-xs sm:text-sm truncate">
+                                                                                        {
+                                                                                            ranking.member
+                                                                                        }
+                                                                                    </div>
+                                                                                    <div className="flex items-baseline gap-1 flex-shrink-0">
+                                                                                        <span className="text-base sm:text-lg font-bold">
+                                                                                            {
+                                                                                                ranking.average_rank
+                                                                                            }
+                                                                                        </span>
+                                                                                        <span className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                                                                            avg
+                                                                                        </span>
+                                                                                    </div>
                                                                                 </div>
-                                                                                <div className="text-[10px] sm:text-xs text-muted-foreground">
+                                                                                {/* Progress Bar */}
+                                                                                <div className="relative w-full h-1.5 sm:h-2 bg-muted/50 rounded-full overflow-hidden">
+                                                                                    <div
+                                                                                        className={cn(
+                                                                                            "absolute left-0 top-0 h-full rounded-full transition-all duration-500",
+                                                                                            index ===
+                                                                                                0 &&
+                                                                                                "bg-gradient-to-r from-yellow-500 to-yellow-600",
+                                                                                            index ===
+                                                                                                1 &&
+                                                                                                "bg-gradient-to-r from-slate-400 to-slate-500",
+                                                                                            index ===
+                                                                                                2 &&
+                                                                                                "bg-gradient-to-r from-orange-500 to-orange-600",
+                                                                                            index >
+                                                                                                2 &&
+                                                                                                "bg-gradient-to-r from-muted-foreground/50 to-muted-foreground/70",
+                                                                                        )}
+                                                                                        style={{
+                                                                                            width: `${progressPercent}%`,
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="text-[9px] sm:text-[10px] text-muted-foreground">
                                                                                     {
                                                                                         ranking.rankings_count
                                                                                     }{" "}
                                                                                     votes
+                                                                                    from
+                                                                                    peers
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                        <div className="text-right flex-shrink-0">
-                                                                            <div className="text-lg sm:text-xl font-bold">
-                                                                                {
-                                                                                    ranking.average_rank
-                                                                                }
-                                                                            </div>
-                                                                            <div className="text-[9px] sm:text-[10px] text-muted-foreground">
-                                                                                Avg
-                                                                                Rank
-                                                                            </div>
-                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ),
+                                                                );
+                                                            },
                                                         )}
                                                     </div>
                                                 </CardContent>
@@ -1041,14 +1129,14 @@ export const AgentCouncilMode = ({
                                         </TabsContent>
 
                                         {/* Stage 1 Tab */}
-                                        <TabsContent value="stage1" className="mt-3">
-                                            <div className="space-y-3 sm:space-y-4">
+                                        <TabsContent value="stage1" className="mt-2 sm:mt-3">
+                                            <div className="space-y-2 sm:space-y-4">
                                                 {turn.stage1_results?.map(
                                                     (result, index) => (
                                                         <Card key={index} className="bg-card border-muted shadow-sm">
-                                                            <CardHeader className="pb-2 sm:pb-3">
-                                                                <CardTitle className="text-xs sm:text-sm flex items-center justify-between gap-2">
-                                                                    <span className="truncate font-semibold">
+                                                            <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                                <CardTitle className="text-[10px] sm:text-sm flex items-center justify-between gap-2">
+                                                                    <span className="truncate font-bold">
                                                                         {
                                                                             result.member
                                                                         }
@@ -1056,7 +1144,7 @@ export const AgentCouncilMode = ({
                                                                     <Badge
                                                                         variant="outline"
                                                                         className={cn(
-                                                                            "text-[9px] sm:text-[10px] flex-shrink-0",
+                                                                            "text-[8px] sm:text-[10px] flex-shrink-0 px-1 sm:px-1.5",
                                                                             getProviderBadgeColor(
                                                                                 result.provider,
                                                                             ),
@@ -1066,8 +1154,8 @@ export const AgentCouncilMode = ({
                                                                     </Badge>
                                                                 </CardTitle>
                                                             </CardHeader>
-                                                            <CardContent>
-                                                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                            <CardContent className="pt-0">
+                                                                <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
                                                                     <MarkdownRenderer
                                                                         content={
                                                                             result.response
@@ -1082,19 +1170,19 @@ export const AgentCouncilMode = ({
                                                         </TabsContent>
 
                                                         {/* Stage 2 Tab */}
-                                                        <TabsContent value="stage2" className="mt-3">
-                                                            <div className="space-y-3 sm:space-y-4">
+                                                        <TabsContent value="stage2" className="mt-2 sm:mt-3">
+                                                            <div className="space-y-2 sm:space-y-4">
                                                                 {turn.stage2_results.map(
                                                     (result, index) => (
                                                         <Card key={index} className="bg-card border-muted shadow-sm">
-                                                            <CardHeader className="pb-2 sm:pb-3">
-                                                                <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
-                                                                    <Award className="w-3.5 h-3.5 text-primary" />
-                                                                    {result.member}'s Ranking
+                                                            <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                                <CardTitle className="text-[10px] sm:text-sm font-bold flex items-center gap-1">
+                                                                    <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                                                                    {result.member}
                                                                 </CardTitle>
                                                             </CardHeader>
-                                                            <CardContent>
-                                                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                            <CardContent className="pt-0">
+                                                                <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
                                                                     <MarkdownRenderer
                                                                         content={
                                                                             result.ranking
@@ -1114,52 +1202,62 @@ export const AgentCouncilMode = ({
                                     ))}
                                 </div>
                             )}
-                        </div>
-                    </ScrollArea>
-
-                    {/* Input Area */}
-                    <div className="border-t bg-background p-3 sm:p-4">
-                        {currentSession && currentSession.turns.length > 0 && (
-                            <div className="mb-2 text-[10px] text-muted-foreground">
-                                💬 Continue conversation in this session
                             </div>
-                        )}
-                        <div className="relative">
-                            <Textarea
-                                ref={textareaRef}
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={
-                                    councilAvailable
-                                        ? currentSession
-                                            ? "Ask a follow-up question..."
-                                            : "Ask the council a question..."
-                                        : "Please configure API keys first..."
-                                }
-                                className="min-h-[60px] sm:min-h-[70px] pr-12 resize-none text-xs sm:text-sm"
-                                disabled={isLoading || !councilAvailable}
-                            />
-                            <Button
-                                size="icon"
-                                onClick={handleSubmit}
-                                disabled={
-                                    !input.trim() ||
-                                    isLoading ||
-                                    !councilAvailable
-                                }
-                                className="absolute bottom-2 right-2 h-8 w-8"
-                            >
-                                {isLoading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Send className="w-4 h-4" />
+                        </ScrollArea>
+
+                        {/* Input Area - Fixed at bottom */}
+                        <div className="border-t bg-gradient-to-t from-background via-background to-transparent backdrop-blur-sm p-2 sm:p-4 flex-shrink-0 safe-area-inset-bottom">
+                            {currentSession && currentSession.turns.length > 0 && (
+                                <div className="mb-1.5 sm:mb-2 text-[9px] sm:text-[10px] text-muted-foreground px-1 flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                    Continue conversation
+                                </div>
+                            )}
+                            <div className="relative">
+                                <Textarea
+                                    ref={textareaRef}
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={
+                                        councilAvailable
+                                            ? currentSession
+                                                ? "Ask follow-up..."
+                                                : "Ask council..."
+                                            : "Configure API keys first..."
+                                    }
+                                    className="min-h-[50px] sm:min-h-[70px] pr-10 sm:pr-12 resize-none text-xs sm:text-sm rounded-xl border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
+                                    disabled={isLoading || !councilAvailable}
+                                />
+                                <Button
+                                    size="icon"
+                                    onClick={handleSubmit}
+                                    disabled={
+                                        !input.trim() ||
+                                        isLoading ||
+                                        !councilAvailable
+                                    }
+                                    className="absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2 h-7 w-7 sm:h-8 sm:w-8 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                >
+                                    {isLoading ? (
+                                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                                    ) : (
+                                        <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    )}
+                                </Button>
+                            </div>
+                            <div className="mt-1 sm:mt-1.5 text-[9px] sm:text-xs text-muted-foreground text-center">
+                                <span className="hidden sm:inline">
+                                    Enter to submit • Shift+Enter for new line
+                                </span>
+                                <span className="inline sm:hidden">Enter to submit</span>
+                                {currentSession && (
+                                    <span className="hidden sm:inline">
+                                        {" "}
+                                        • Same session
+                                    </span>
                                 )}
-                            </Button>
-                        </div>
-                        <div className="mt-1.5 text-[10px] sm:text-xs text-muted-foreground text-center">
-                            Enter to submit • Shift+Enter for new line
-                            {currentSession && " • Asking in same session"}
+                            </div>
                         </div>
                     </div>
                 </div>
