@@ -21,6 +21,9 @@ import {
     History,
     X,
     Sparkles,
+    Copy,
+    Download,
+    Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +44,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +117,8 @@ export const AgentCouncilMode = ({
     const [showConfig, setShowConfig] = useState(false);
     const [showSessions, setShowSessions] = useState(false);
     const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+    const [copiedTurnId, setCopiedTurnId] = useState<string | null>(null);
+    const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({});
     const [councilMembers, setCouncilMembers] = useState<CouncilMember[]>(
         get_council_members(),
     );
@@ -398,6 +404,77 @@ export const AgentCouncilMode = ({
         setCouncilMembers(updated);
     };
 
+    // Copy to clipboard function
+    const copyToClipboard = async (text: string, turnId: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedTurnId(turnId);
+            toast({
+                title: "Copied!",
+                description: "Content copied to clipboard",
+            });
+            setTimeout(() => setCopiedTurnId(null), 2000);
+        } catch (error) {
+            toast({
+                title: "Failed to copy",
+                description: "Could not copy to clipboard",
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Export as markdown
+    const exportAsMarkdown = (turn: CouncilTurn) => {
+        const markdown = `# Agent Council - ${new Date(turn.timestamp).toLocaleString()}
+
+## Question
+${turn.query}
+
+---
+
+## Final Answer
+**Chairman:** ${turn.stage3_result.chairman}
+
+${turn.stage3_result.response}
+
+---
+
+## Aggregate Rankings
+${turn.metadata.aggregate_rankings.map((r, i) => `${i + 1}. **${r.member}** - Avg Rank: ${r.average_rank} (${r.rankings_count} votes)`).join('\n')}
+
+---
+
+## Stage 1 - Individual Responses
+
+${turn.stage1_results?.map((r, i) => `### ${i + 1}. ${r.member} (${r.provider})
+${r.response}
+`).join('\n---\n')}
+
+---
+
+## Stage 2 - Peer Rankings
+
+${turn.stage2_results?.map((r, i) => `### ${i + 1}. ${r.member}'s Ranking
+${r.ranking}
+`).join('\n---\n')}
+`;
+
+        const blob = new Blob([markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `council-${turn.id}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+            title: "Exported!",
+            description: "Markdown file downloaded successfully",
+        });
+    };
+
     const getStageProgress = () => {
         switch (currentStage) {
             case "idle":
@@ -430,6 +507,31 @@ export const AgentCouncilMode = ({
         }
     };
 
+    // Generate unique color for each model based on name
+    const getModelColor = (modelName: string) => {
+        const colors = [
+            { bg: "bg-blue-500/20", text: "text-blue-400", border: "border-blue-500/30", ring: "ring-blue-500/20" },
+            { bg: "bg-purple-500/20", text: "text-purple-400", border: "border-purple-500/30", ring: "ring-purple-500/20" },
+            { bg: "bg-pink-500/20", text: "text-pink-400", border: "border-pink-500/30", ring: "ring-pink-500/20" },
+            { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/30", ring: "ring-red-500/20" },
+            { bg: "bg-orange-500/20", text: "text-orange-400", border: "border-orange-500/30", ring: "ring-orange-500/20" },
+            { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30", ring: "ring-yellow-500/20" },
+            { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/30", ring: "ring-green-500/20" },
+            { bg: "bg-teal-500/20", text: "text-teal-400", border: "border-teal-500/30", ring: "ring-teal-500/20" },
+            { bg: "bg-cyan-500/20", text: "text-cyan-400", border: "border-cyan-500/30", ring: "ring-cyan-500/20" },
+            { bg: "bg-indigo-500/20", text: "text-indigo-400", border: "border-indigo-500/30", ring: "ring-indigo-500/20" },
+        ];
+        
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < modelName.length; i++) {
+            hash = ((hash << 5) - hash) + modelName.charCodeAt(i);
+            hash = hash & hash;
+        }
+        
+        return colors[Math.abs(hash) % colors.length];
+    };
+
     const getProviderBadgeColor = (provider: string) => {
         const colors = {
             groq: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
@@ -442,6 +544,9 @@ export const AgentCouncilMode = ({
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-full sm:max-w-[90vw] lg:max-w-7xl h-[100dvh] sm:h-auto sm:max-h-[95vh] p-0 gap-0 sm:rounded-lg rounded-none flex flex-col [&>button]:hidden">
+                <DialogDescription className="sr-only">
+                    Multi-agent LLM council for collaborative problem-solving. Configure council members, ask questions, and view ranked responses with detailed analysis.
+                </DialogDescription>
                 <DialogHeader className="border-b bg-gradient-to-b from-card to-background p-2.5 sm:p-4 space-y-2 flex-shrink-0">
                     <div className="flex items-center justify-between gap-2 sm:gap-3">
                         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
@@ -836,21 +941,56 @@ export const AgentCouncilMode = ({
 
                             {/* Loading */}
                             {isLoading && (
-                                <Card className="border-primary/50 shadow-lg bg-gradient-to-br from-primary/5 to-transparent">
+                                <Card className="border-primary/50 shadow-lg bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-300">
                                     <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
-                                        <div className="space-y-2 sm:space-y-3">
+                                        <div className="space-y-3 sm:space-y-4">
                                             <div className="flex items-center gap-2 sm:gap-3">
-                                                <div className="p-1.5 bg-primary/10 rounded-full">
-                                                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-primary" />
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+                                                    <div className="relative p-1.5 bg-primary/10 rounded-full">
+                                                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-primary" />
+                                                    </div>
                                                 </div>
-                                                <span className="text-[10px] sm:text-sm font-semibold">
-                                                    {getStageLabel()}
-                                                </span>
+                                                <div className="flex-1">
+                                                    <span className="text-[10px] sm:text-sm font-bold block">
+                                                        {getStageLabel()}
+                                                    </span>
+                                                    <span className="text-[9px] sm:text-xs text-muted-foreground">
+                                                        {currentStage === "stage1" && `${councilMembers.length} models responding...`}
+                                                        {currentStage === "stage2" && "Peer ranking in progress..."}
+                                                        {currentStage === "stage3" && "Chairman synthesizing..."}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <Progress
                                                 value={getStageProgress()}
-                                                className="h-1.5 sm:h-2"
+                                                className="h-2 sm:h-2.5"
                                             />
+                                            
+                                            {/* Live Model Status */}
+                                            {currentStage === "stage1" && (
+                                                <div className="space-y-1.5 sm:space-y-2 animate-in slide-in-from-bottom-2 duration-500">
+                                                    <p className="text-[9px] sm:text-xs text-muted-foreground font-medium">
+                                                        Active Models:
+                                                    </p>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                                                        {councilMembers.map((member, idx) => {
+                                                            const color = getModelColor(member.name);
+                                                            return (
+                                                                <div
+                                                                    key={idx}
+                                                                    className={`flex items-center gap-1.5 p-1.5 sm:p-2 rounded-lg border ${color.bg} ${color.border} animate-pulse`}
+                                                                >
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${color.text.replace('text-', 'bg-')} animate-pulse`} />
+                                                                    <span className={`text-[9px] sm:text-xs font-medium truncate ${color.text}`}>
+                                                                        {member.name}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                                                 <span>Stage {currentStage === "stage1" ? "1" : currentStage === "stage2" ? "2" : "3"} of 3</span>
                                                 <span>{getStageProgress()}%</span>
@@ -868,25 +1008,41 @@ export const AgentCouncilMode = ({
                                             {turnIndex > 0 && <Separator className="my-6 sm:my-8" />}
                                             
                                             {/* Turn Header */}
-                                            <div className="flex items-center gap-1.5 sm:gap-3">
-                                                <Badge variant="outline" className="text-[10px] sm:text-xs font-medium px-1.5 sm:px-2">
-                                                    Turn {turnIndex + 1}
-                                                </Badge>
-                                                <span className="text-[9px] sm:text-xs text-muted-foreground">
-                                                    {new Date(turn.timestamp).toLocaleString('en-US', {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </span>
+                                            <div className="flex items-center justify-between gap-2 sm:gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                                    <Badge 
+                                                        variant="outline" 
+                                                        className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30"
+                                                    >
+                                                        Turn {turnIndex + 1}
+                                                    </Badge>
+                                                    <span className="text-[9px] sm:text-xs text-muted-foreground">
+                                                        {new Date(turn.timestamp).toLocaleString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </div>
+                                                {/* Mini stats */}
+                                                <div className="flex items-center gap-1 sm:gap-2">
+                                                    <div className="flex items-center gap-0.5 text-[9px] sm:text-xs text-muted-foreground">
+                                                        <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                        <span className="font-medium">{turn.stage1_results?.length || 0}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-0.5 text-[9px] sm:text-xs text-muted-foreground">
+                                                        <BarChart3 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                        <span className="font-medium">{turn.stage2_results?.length || 0}</span>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {/* Question */}
-                                            <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-muted shadow-sm">
+                                            <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-muted shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-left-3">
                                                 <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
                                                     <CardTitle className="text-[10px] sm:text-sm font-bold flex items-center gap-1.5">
-                                                        <div className="p-1 bg-primary/10 rounded">
+                                                        <div className="p-1 sm:p-1.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg shadow-sm">
                                                             <MessageSquare className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
                                                         </div>
                                                         Question
@@ -900,24 +1056,54 @@ export const AgentCouncilMode = ({
                                             </Card>
 
                                             {/* Final Answer */}
-                                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 shadow-lg ring-1 ring-primary/10">
-                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
-                                                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-bold">
-                                                        <div className="p-1.5 bg-primary/20 rounded-lg shadow-sm">
-                                                            <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/40 shadow-xl ring-2 ring-primary/20 hover:ring-primary/30 transition-all duration-500 animate-in fade-in zoom-in-95 relative">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-lg animate-pulse pointer-events-none" />
+                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4 relative z-10">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-bold flex-1">
+                                                            <div className="relative">
+                                                                <div className="absolute inset-0 bg-primary/30 rounded-lg blur-sm animate-pulse" />
+                                                                <div className="relative p-1.5 sm:p-2 bg-gradient-to-br from-primary/30 to-primary/20 rounded-lg shadow-md">
+                                                                    <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                                                                </div>
+                                                            </div>
+                                                            <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent animate-in slide-in-from-left-2">
+                                                                Final Answer
+                                                            </span>
+                                                        </CardTitle>
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => copyToClipboard(turn.stage3_result.response, turn.id)}
+                                                                className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                                                title="Copy answer"
+                                                            >
+                                                                {copiedTurnId === turn.id ? (
+                                                                    <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500" />
+                                                                ) : (
+                                                                    <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => exportAsMarkdown(turn)}
+                                                                className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                                                title="Export as markdown"
+                                                            >
+                                                                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                            </Button>
                                                         </div>
-                                                        <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                                                            Final Answer
-                                                        </span>
-                                                    </CardTitle>
-                                                    <CardDescription className="text-[9px] sm:text-xs flex items-center gap-1">
-                                                        <span className="opacity-70">by</span>
-                                                        <span className="font-semibold text-foreground/90">
+                                                    </div>
+                                                    <div className="text-[9px] sm:text-xs flex items-center gap-1.5 text-muted-foreground">
+                                                        <span className="opacity-70">Synthesized by</span>
+                                                        <Badge variant="outline" className="font-semibold text-foreground/90 border-primary/30 bg-primary/5">
                                                             {turn.stage3_result.chairman}
-                                                        </span>
-                                                    </CardDescription>
+                                                        </Badge>
+                                                    </div>
                                                 </CardHeader>
-                                                <CardContent className="pt-0">
+                                                <CardContent className="pt-0 relative z-10">
                                                     <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
                                                         <MarkdownRenderer
                                                             content={
@@ -930,52 +1116,100 @@ export const AgentCouncilMode = ({
                                             </Card>
 
                                             {/* Details Tabs - Collapsible */}
-                                            <Collapsible>
+                                            <Collapsible 
+                                                open={openDetails[turn.id] || false}
+                                                onOpenChange={(isOpen) => {
+                                                    console.log("Collapsible toggled:", turn.id, isOpen);
+                                                    setOpenDetails(prev => ({ ...prev, [turn.id]: isOpen }));
+                                                }}
+                                                className="relative z-10"
+                                            >
                                                 <CollapsibleTrigger asChild>
                                                     <Button
+                                                        type="button"
                                                         variant="outline"
                                                         size="sm"
-                                                        className="w-full text-[10px] sm:text-sm h-8 sm:h-9"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            const newState = !openDetails[turn.id];
+                                                            console.log("Button clicked:", turn.id, "New state:", newState);
+                                                            setOpenDetails(prev => ({ ...prev, [turn.id]: newState }));
+                                                        }}
+                                                        className="w-full text-[10px] sm:text-sm h-9 sm:h-10 bg-gradient-to-r from-primary/5 via-muted/50 to-transparent hover:from-primary/10 hover:via-muted hover:to-muted/50 border-primary/20 hover:border-primary/30 transition-all duration-300 group shadow-sm hover:shadow-md cursor-pointer"
                                                     >
-                                                        <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5 sm:mr-2" />
-                                                        <span className="hidden sm:inline">
-                                                            View Details (Rankings, Stages)
-                                                        </span>
-                                                        <span className="inline sm:hidden">
-                                                            Details
-                                                        </span>
-                                                        <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-auto" />
+                                                        <div className="flex items-center gap-1.5 sm:gap-2 flex-1">
+                                                            <div className="p-1 bg-primary/10 rounded group-hover:bg-primary/20 transition-colors">
+                                                                <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary group-hover:scale-110 transition-transform" />
+                                                            </div>
+                                                            <div className="flex flex-col items-start">
+                                                                <span className="font-semibold leading-none">
+                                                                    <span className="hidden sm:inline">View Detailed Analysis</span>
+                                                                    <span className="inline sm:hidden">Analysis</span>
+                                                                </span>
+                                                                <span className="text-[8px] sm:text-[9px] text-muted-foreground leading-none mt-0.5">
+                                                                    {turn.stage1_results?.length || 0} responses • {turn.stage2_results?.length || 0} rankings • {turn.metadata.aggregate_rankings.length} scored
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-foreground transition-all ${openDetails[turn.id] ? 'rotate-180' : ''}`} />
                                                     </Button>
                                                 </CollapsibleTrigger>
-                                                <CollapsibleContent className="mt-2 sm:mt-4">
+                                                <CollapsibleContent className="mt-3 sm:mt-4 animate-in slide-in-from-top-2 duration-300">
+                                                    {/* Analysis Info Card */}
+                                                    <Card className="mb-3 sm:mb-4 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+                                                        <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4">
+                                                            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                                                                <div className="text-center">
+                                                                    <div className="p-2 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 mb-1.5">
+                                                                        <Users className="w-4 h-4 sm:w-5 sm:h-5 mx-auto text-blue-500" />
+                                                                    </div>
+                                                                    <div className="text-base sm:text-lg font-bold">{turn.stage1_results?.length || 0}</div>
+                                                                    <div className="text-[9px] sm:text-xs text-muted-foreground">Models</div>
+                                                                </div>
+                                                                <div className="text-center">
+                                                                    <div className="p-2 sm:p-3 bg-purple-500/10 rounded-lg border border-purple-500/20 mb-1.5">
+                                                                        <Award className="w-4 h-4 sm:w-5 sm:h-5 mx-auto text-purple-500" />
+                                                                    </div>
+                                                                    <div className="text-base sm:text-lg font-bold">{turn.stage2_results?.length || 0}</div>
+                                                                    <div className="text-[9px] sm:text-xs text-muted-foreground">Rankings</div>
+                                                                </div>
+                                                                <div className="text-center">
+                                                                    <div className="p-2 sm:p-3 bg-green-500/10 rounded-lg border border-green-500/20 mb-1.5">
+                                                                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mx-auto text-green-500" />
+                                                                    </div>
+                                                                    <div className="text-base sm:text-lg font-bold">{turn.metadata.aggregate_rankings[0]?.member.split(' ')[0] || 'N/A'}</div>
+                                                                    <div className="text-[9px] sm:text-xs text-muted-foreground">Top Rated</div>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                    
                                                     <Tabs defaultValue="rankings" className="w-full">
-                                                        <TabsList className="grid w-full grid-cols-3 h-auto p-0.5 sm:p-1">
+                                                        <TabsList className="grid w-full grid-cols-3 h-auto p-0.5 sm:p-1 bg-muted/50">
                                                             <TabsTrigger
                                                                 value="rankings"
-                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary py-2 sm:py-2.5 px-2 gap-1 sm:gap-1.5 font-medium"
                                                             >
-                                                                <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
-                                                                <span className="hidden sm:inline ml-1">
-                                                                    Rank
-                                                                </span>
+                                                                <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                                <span className="hidden sm:inline">Rankings</span>
+                                                                <span className="inline sm:hidden">Rank</span>
                                                             </TabsTrigger>
                                                             <TabsTrigger
                                                                 value="stage1"
-                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary py-2 sm:py-2.5 px-2 gap-1 sm:gap-1.5 font-medium"
                                                             >
-                                                                <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
-                                                                <span className="hidden sm:inline ml-1">
-                                                                    S1
-                                                                </span>
+                                                                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                                <span className="hidden sm:inline">Responses</span>
+                                                                <span className="inline sm:hidden">Resp</span>
                                                             </TabsTrigger>
                                                             <TabsTrigger
                                                                 value="stage2"
-                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 py-1.5 sm:py-2 px-2"
+                                                                className="text-[9px] sm:text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary py-2 sm:py-2.5 px-2 gap-1 sm:gap-1.5 font-medium"
                                                             >
-                                                                <Award className="w-2.5 h-2.5 sm:w-3 sm:h-3 sm:mr-1" />
-                                                                <span className="hidden sm:inline ml-1">
-                                                                    S2
-                                                                </span>
+                                                                <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                                <span className="hidden sm:inline">Reviews</span>
+                                                                <span className="inline sm:hidden">Rev</span>
                                                             </TabsTrigger>
                                                         </TabsList>
 
@@ -984,11 +1218,13 @@ export const AgentCouncilMode = ({
                                                             <Card className="bg-card border-muted shadow-sm">
                                                                 <CardHeader className="pb-3 sm:pb-4">
                                                                     <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
-                                                                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                                                                        <div className="p-1 bg-primary/10 rounded-lg">
+                                                                            <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                                                                        </div>
                                                                         Rankings
                                                                     </CardTitle>
                                                                     <CardDescription className="text-[9px] sm:text-xs">
-                                                                        Peer-reviewed performance
+                                                                        Peer-reviewed performance scores
                                                                     </CardDescription>
                                                                 </CardHeader>
                                                                 <CardContent>
@@ -1017,43 +1253,45 @@ export const AgentCouncilMode = ({
                                                                               maxRank) *
                                                                           100
                                                                         : 0;
+                                                                const modelColor = getModelColor(ranking.member);
                                                                 return (
                                                                     <div
                                                                         key={
                                                                             ranking.member
                                                                         }
                                                                         className={cn(
-                                                                            "p-2 sm:p-2.5 rounded-lg border transition-all hover:shadow-md",
+                                                                            "p-2 sm:p-2.5 rounded-xl border transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer animate-in slide-in-from-bottom-3",
                                                                             index ===
                                                                                 0 &&
-                                                                                "bg-gradient-to-r from-yellow-500/10 to-transparent border-yellow-500/30 shadow-sm",
+                                                                                "bg-gradient-to-br from-yellow-500/15 via-yellow-500/5 to-transparent border-yellow-500/40 shadow-md ring-2 ring-yellow-500/20",
                                                                             index ===
                                                                                 1 &&
-                                                                                "bg-gradient-to-r from-slate-500/10 to-transparent border-slate-400/30",
+                                                                                "bg-gradient-to-br from-slate-500/15 via-slate-500/5 to-transparent border-slate-400/40 shadow-md ring-2 ring-slate-400/20",
                                                                             index ===
                                                                                 2 &&
-                                                                                "bg-gradient-to-r from-orange-500/10 to-transparent border-orange-500/30",
+                                                                                "bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent border-orange-500/40 shadow-md ring-2 ring-orange-500/20",
                                                                             index >
                                                                                 2 &&
-                                                                                "bg-muted/30 border-muted/50",
+                                                                                `bg-gradient-to-br ${modelColor.bg} to-transparent ${modelColor.border}`,
                                                                         )}
+                                                                        style={{ animationDelay: `${index * 150}ms` }}
                                                                     >
                                                                         <div className="flex items-start gap-2 sm:gap-3">
                                                                             <div
                                                                                 className={cn(
-                                                                                    "text-base sm:text-xl flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full font-bold shadow-sm",
+                                                                                    "text-base sm:text-xl flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full font-bold shadow-lg border-2",
                                                                                     index ===
                                                                                         0 &&
-                                                                                        "bg-yellow-500/30 text-yellow-700 dark:text-yellow-300",
+                                                                                        "bg-gradient-to-br from-yellow-500/40 to-yellow-600/40 text-yellow-700 dark:text-yellow-200 border-yellow-400/50 animate-pulse",
                                                                                     index ===
                                                                                         1 &&
-                                                                                        "bg-slate-400/30 text-slate-700 dark:text-slate-300",
+                                                                                        "bg-gradient-to-br from-slate-400/40 to-slate-500/40 text-slate-700 dark:text-slate-200 border-slate-400/50",
                                                                                     index ===
                                                                                         2 &&
-                                                                                        "bg-orange-500/30 text-orange-700 dark:text-orange-300",
+                                                                                        "bg-gradient-to-br from-orange-500/40 to-orange-600/40 text-orange-700 dark:text-orange-200 border-orange-400/50",
                                                                                     index >
                                                                                         2 &&
-                                                                                        "bg-muted text-muted-foreground text-xs sm:text-sm",
+                                                                                        `${modelColor.bg} ${modelColor.text} border-${modelColor.border.split('-')[1]}/50 text-xs sm:text-sm`,
                                                                                 )}
                                                                             >
                                                                                 {index ===
@@ -1068,54 +1306,60 @@ export const AgentCouncilMode = ({
                                                                                         : index +
                                                                                           1}
                                                                             </div>
-                                                                            <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
+                                                                            <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
                                                                                 <div className="flex items-baseline justify-between gap-2">
-                                                                                    <div className="font-bold text-xs sm:text-sm truncate">
-                                                                                        {
-                                                                                            ranking.member
-                                                                                        }
+                                                                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                                                        <div className={`w-2 h-2 rounded-full ${modelColor.text.replace('text-', 'bg-')} shadow-sm`} />
+                                                                                        <span className={`font-bold text-xs sm:text-sm truncate ${modelColor.text}`}>
+                                                                                            {ranking.member}
+                                                                                        </span>
                                                                                     </div>
-                                                                                    <div className="flex items-baseline gap-1 flex-shrink-0">
-                                                                                        <span className="text-base sm:text-lg font-bold">
+                                                                                    <div className="flex items-baseline gap-0.5 sm:gap-1 flex-shrink-0">
+                                                                                        <span className="text-lg sm:text-xl font-black">
                                                                                             {
                                                                                                 ranking.average_rank
                                                                                             }
                                                                                         </span>
-                                                                                        <span className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                                                                        <span className="text-[8px] sm:text-[9px] text-muted-foreground font-medium">
                                                                                             avg
                                                                                         </span>
                                                                                     </div>
                                                                                 </div>
-                                                                                {/* Progress Bar */}
-                                                                                <div className="relative w-full h-1.5 sm:h-2 bg-muted/50 rounded-full overflow-hidden">
+                                                                                {/* Enhanced Progress Bar */}
+                                                                                <div className="relative w-full h-2 sm:h-2.5 bg-muted/50 rounded-full overflow-hidden shadow-inner">
                                                                                     <div
                                                                                         className={cn(
-                                                                                            "absolute left-0 top-0 h-full rounded-full transition-all duration-500",
+                                                                                            "absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out",
                                                                                             index ===
                                                                                                 0 &&
-                                                                                                "bg-gradient-to-r from-yellow-500 to-yellow-600",
+                                                                                                "bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg",
                                                                                             index ===
                                                                                                 1 &&
-                                                                                                "bg-gradient-to-r from-slate-400 to-slate-500",
+                                                                                                "bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 shadow-lg",
                                                                                             index ===
                                                                                                 2 &&
-                                                                                                "bg-gradient-to-r from-orange-500 to-orange-600",
+                                                                                                "bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 shadow-lg",
                                                                                             index >
                                                                                                 2 &&
-                                                                                                "bg-gradient-to-r from-muted-foreground/50 to-muted-foreground/70",
+                                                                                                "bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/80",
                                                                                         )}
                                                                                         style={{
                                                                                             width: `${progressPercent}%`,
                                                                                         }}
-                                                                                    />
+                                                                                    >
+                                                                                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                                                                    </div>
                                                                                 </div>
-                                                                                <div className="text-[9px] sm:text-[10px] text-muted-foreground">
-                                                                                    {
-                                                                                        ranking.rankings_count
-                                                                                    }{" "}
-                                                                                    votes
-                                                                                    from
-                                                                                    peers
+                                                                                <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
+                                                                                    <span className="text-muted-foreground font-medium">
+                                                                                        {
+                                                                                            ranking.rankings_count
+                                                                                        }{" "}
+                                                                                        peer votes
+                                                                                    </span>
+                                                                                    <span className={`font-bold ${modelColor.text}`}>
+                                                                                        {progressPercent.toFixed(0)}% score
+                                                                                    </span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1132,67 +1376,85 @@ export const AgentCouncilMode = ({
                                         <TabsContent value="stage1" className="mt-2 sm:mt-3">
                                             <div className="space-y-2 sm:space-y-4">
                                                 {turn.stage1_results?.map(
-                                                    (result, index) => (
-                                                        <Card key={index} className="bg-card border-muted shadow-sm">
-                                                            <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
-                                                                <CardTitle className="text-[10px] sm:text-sm flex items-center justify-between gap-2">
-                                                                    <span className="truncate font-bold">
-                                                                        {
-                                                                            result.member
-                                                                        }
-                                                                    </span>
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className={cn(
-                                                                            "text-[8px] sm:text-[10px] flex-shrink-0 px-1 sm:px-1.5",
-                                                                            getProviderBadgeColor(
-                                                                                result.provider,
-                                                                            ),
-                                                                        )}
-                                                                    >
-                                                                        {result.provider.toUpperCase()}
-                                                                    </Badge>
-                                                                </CardTitle>
-                                                            </CardHeader>
-                                                            <CardContent className="pt-0">
-                                                                <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
-                                                                    <MarkdownRenderer
-                                                                        content={
-                                                                            result.response
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        </TabsContent>
+                                                    (result, index) => {
+                                                        const modelColor = getModelColor(result.member);
+                                                        return (
+                                                            <Card 
+                                                                key={index} 
+                                                                className={`bg-card border shadow-sm hover:shadow-md transition-all duration-300 animate-in slide-in-from-left-5 ${modelColor.border} ring-1 ${modelColor.ring}`}
+                                                                style={{ animationDelay: `${index * 100}ms` }}
+                                                            >
+                                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                                    <CardTitle className="text-[10px] sm:text-sm flex items-center justify-between gap-2">
+                                                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                                            <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${modelColor.text.replace('text-', 'bg-')} shadow-sm`} />
+                                                                            <span className={`truncate font-bold ${modelColor.text}`}>
+                                                                                {result.member}
+                                                                            </span>
+                                                                        </div>
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className={cn(
+                                                                                "text-[8px] sm:text-[10px] flex-shrink-0 px-1 sm:px-1.5",
+                                                                                getProviderBadgeColor(
+                                                                                    result.provider,
+                                                                                ),
+                                                                            )}
+                                                                        >
+                                                                            {result.provider.toUpperCase()}
+                                                                        </Badge>
+                                                                    </CardTitle>
+                                                                </CardHeader>
+                                                                <CardContent className="pt-0">
+                                                                    <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
+                                                                        <MarkdownRenderer
+                                                                            content={
+                                                                                result.response
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        </TabsContent>
 
                                                         {/* Stage 2 Tab */}
                                                         <TabsContent value="stage2" className="mt-2 sm:mt-3">
                                                             <div className="space-y-2 sm:space-y-4">
                                                                 {turn.stage2_results.map(
-                                                    (result, index) => (
-                                                        <Card key={index} className="bg-card border-muted shadow-sm">
-                                                            <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
-                                                                <CardTitle className="text-[10px] sm:text-sm font-bold flex items-center gap-1">
-                                                                    <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                                                                    {result.member}
-                                                                </CardTitle>
-                                                            </CardHeader>
-                                                            <CardContent className="pt-0">
-                                                                <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
-                                                                    <MarkdownRenderer
-                                                                        content={
-                                                                            result.ranking
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                                    ),
-                                                                )}
+                                                    (result, index) => {
+                                                        const modelColor = getModelColor(result.member);
+                                                        return (
+                                                            <Card 
+                                                                key={index} 
+                                                                className={`bg-card border shadow-sm hover:shadow-md transition-all duration-300 animate-in slide-in-from-right-5 ${modelColor.border} ring-1 ${modelColor.ring}`}
+                                                                style={{ animationDelay: `${index * 100}ms` }}
+                                                            >
+                                                                <CardHeader className="pb-1.5 sm:pb-3 pt-2.5 sm:pt-4">
+                                                                    <CardTitle className="text-[10px] sm:text-sm font-bold flex items-center gap-1.5">
+                                                                        <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${modelColor.text.replace('text-', 'bg-')} shadow-sm`} />
+                                                                        <span className={modelColor.text}>
+                                                                            {result.member}
+                                                                        </span>
+                                                                        <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary ml-auto" />
+                                                                    </CardTitle>
+                                                                </CardHeader>
+                                                                <CardContent className="pt-0">
+                                                                    <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] sm:text-sm">
+                                                                        <MarkdownRenderer
+                                                                            content={
+                                                                                result.ranking
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        );
+                                                    },
+                                                )}
                                                             </div>
                                                         </TabsContent>
                                                     </Tabs>
@@ -1261,40 +1523,43 @@ export const AgentCouncilMode = ({
                         </div>
                     </div>
                 </div>
-
-                {/* Delete Confirmation Dialog */}
-                <Dialog
-                    open={!!sessionToDelete}
-                    onOpenChange={() => setSessionToDelete(null)}
-                >
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Delete Session?</DialogTitle>
-                        </DialogHeader>
-                        <p className="text-sm text-muted-foreground">
-                            This will permanently delete this council session and
-                            all its turns. This action cannot be undone.
-                        </p>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => setSessionToDelete(null)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                onClick={() =>
-                                    sessionToDelete &&
-                                    handleDeleteSession(sessionToDelete)
-                                }
-                            >
-                                Delete
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
             </DialogContent>
+            
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={!!sessionToDelete}
+                onOpenChange={() => setSessionToDelete(null)}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogDescription className="sr-only">
+                        Confirm deletion of council session
+                    </DialogDescription>
+                    <DialogHeader>
+                        <DialogTitle>Delete Session?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        This will permanently delete this council session and
+                        all its turns. This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setSessionToDelete(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() =>
+                                sessionToDelete &&
+                                handleDeleteSession(sessionToDelete)
+                            }
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     );
 };

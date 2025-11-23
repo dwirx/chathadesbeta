@@ -223,7 +223,28 @@ export async function stage1_collect_responses(
     members?: CouncilMember[],
 ): Promise<Stage1Response[]> {
     const councilMembers = members || getCouncilConfig().members;
-    const messages = [{ role: "user", content: user_query }];
+    
+    // Enhanced prompt untuk Stage 1
+    const enhanced_query = `You are participating in an expert AI council deliberation.
+
+CONTEXT: You're one of ${councilMembers.length} AI models collaborating to provide the best possible answer. Your response will be peer-reviewed by other models and synthesized by a chairman.
+
+QUESTION:
+${user_query}
+
+YOUR TASK:
+1. Provide a comprehensive, well-reasoned response
+2. Draw on your unique strengths and perspective  
+3. Be specific with examples or evidence when possible
+4. Consider edge cases and limitations
+5. Structure your response clearly with sections if needed
+6. Aim for accuracy and helpfulness above all
+
+Remember: Quality and clarity matter. Your peers will evaluate your contribution.
+
+Provide your expert analysis:`;
+
+    const messages = [{ role: "user", content: enhanced_query }];
 
     console.log("🎯 Stage 1: Collecting responses from council members...");
 
@@ -313,34 +334,53 @@ export async function stage2_collect_rankings(
         .map((result, i) => `Response ${labels[i]}:\n${result.response}`)
         .join("\n\n");
 
-    const ranking_prompt = `You are evaluating different responses to the following question:
+    const ranking_prompt = `You are serving as a peer reviewer in an AI council evaluation process.
 
-Question: ${user_query}
+ORIGINAL QUESTION:
+${user_query}
 
-Here are the responses from different models (anonymized):
-
+ANONYMIZED RESPONSES (${stage1_results.length} total):
 ${responses_text}
 
-Your task:
-1. First, evaluate each response individually. For each response, explain what it does well and what it does poorly.
-2. Then, at the very end of your response, provide a final ranking.
+═══════════════════════════════════════
 
-IMPORTANT: Your final ranking MUST be formatted EXACTLY as follows:
-- Start with the line "FINAL RANKING:" (all caps, with colon)
-- Then list the responses from best to worst as a numbered list
-- Each line should be: number, period, space, then ONLY the response label (e.g., "1. Response A")
-- Do not add any other text or explanations in the ranking section
+YOUR TASK AS PEER REVIEWER:
 
-Example of the correct format for your ENTIRE response:
+Phase 1 - INDIVIDUAL EVALUATION:
+For each response, analyze:
+• **Accuracy & Correctness**: Is the information factually accurate?
+• **Completeness**: Does it thoroughly address all aspects?
+• **Clarity & Structure**: Is it well-organized and easy to understand?
+• **Practical Value**: Does it provide actionable insights?
+• **Depth of Analysis**: Does it go beyond surface-level answers?
 
-Response A provides good detail on X but misses Y...
-Response B is accurate but lacks depth on Z...
-Response C offers the most comprehensive answer...
+Provide 2-3 sentences for each response explaining strengths and weaknesses.
+
+Phase 2 - FINAL RANKING:
+After your analysis, you MUST provide a final ranking.
+
+CRITICAL FORMAT REQUIREMENTS:
+- Start with exactly "FINAL RANKING:" (all caps, with colon)
+- List responses from BEST to WORST as a numbered list
+- Each line format: "number. Response [LETTER]" (e.g., "1. Response A")
+- Do NOT add any text after the response label in the ranking section
+
+═══════════════════════════════════════
+
+EXAMPLE OF COMPLETE RESPONSE:
+
+Response A demonstrates strong technical accuracy and provides practical examples. However, it lacks depth in edge case analysis.
+
+Response B offers comprehensive coverage with excellent structure. Minor weakness in providing concrete examples.
+
+Response C is clear but somewhat superficial, missing key considerations that were asked in the question.
 
 FINAL RANKING:
-1. Response C
-2. Response A
-3. Response B
+1. Response B
+2. Response A  
+3. Response C
+
+═══════════════════════════════════════
 
 Now provide your evaluation and ranking:`;
 
@@ -404,22 +444,51 @@ export async function stage3_synthesize_final(
         )
         .join("\n\n");
 
-    const chairman_prompt = `You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
+    const chairman_prompt = `You are the Chairman of an AI Council. Your role is to synthesize multiple expert perspectives into ONE definitive answer.
 
-Original Question: ${user_query}
+═══════════════════════════════════════
+ORIGINAL QUESTION:
+${user_query}
+═══════════════════════════════════════
 
-STAGE 1 - Individual Responses:
+STAGE 1 - COUNCIL MEMBER RESPONSES (${stage1_results.length} members):
 ${stage1_text}
 
-STAGE 2 - Peer Rankings:
+═══════════════════════════════════════
+STAGE 2 - PEER EVALUATION RESULTS (${stage2_results.length} rankings):
 ${stage2_text}
 
-Your task as Chairman is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
-- The individual responses and their insights
-- The peer rankings and what they reveal about response quality
-- Any patterns of agreement or disagreement
+═══════════════════════════════════════
 
-Provide a clear, well-reasoned final answer that represents the council's collective wisdom:`;
+YOUR ROLE AS CHAIRMAN:
+
+You must create ONE comprehensive answer by synthesizing these diverse perspectives. This is NOT a summary - it's a carefully crafted response that:
+
+1. **Integrates Best Ideas**: Extract and combine the strongest points from all responses
+2. **Resolves Conflicts**: Where responses disagree, determine the best approach using evidence and reasoning
+3. **Fills Gaps**: Add important points that individual members missed
+4. **Provides Structure**: Organize information logically with clear sections (use markdown headers/lists)
+5. **Maintains Objectivity**: Consider rankings but use your judgment - sometimes lower-ranked responses have valuable insights
+6. **Ensures Completeness**: Address ALL aspects of the original question
+7. **Adds Value**: Don't just repeat - synthesize, enhance, and improve upon the individual contributions
+
+SYNTHESIS GUIDELINES:
+• Start directly with your answer (no meta-commentary about being chairman)
+• Use clear markdown formatting (headers, lists, bold) for complex topics
+• Be authoritative yet acknowledge uncertainty where appropriate
+• Prioritize accuracy over completeness if there's doubt
+• Make it practical and actionable when relevant
+• Cite specific points from different members when they add credibility
+• Length should match complexity - don't pad, but don't omit important details
+
+QUALITY STANDARDS:
+✓ Accurate and factually correct
+✓ Comprehensive yet concise
+✓ Well-structured and easy to follow
+✓ Practical and helpful
+✓ Integrates multiple perspectives intelligently
+
+Provide your synthesized final answer now:`;
 
     const messages = [{ role: "user", content: chairman_prompt }];
 
